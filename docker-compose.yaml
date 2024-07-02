@@ -4,16 +4,26 @@
 # $ docker compose up -d --build --force-recreate
 
 services:
-  # postgres:
-  #   image: postgres:16
-  #   environment:
-  #     POSTGRES_USER: user
-  #     POSTGRES_PASSWORD: password
+  postgres:
+    image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - postgres.env
 
   backup:
     build:
       context: .
       args:
         ALPINE_VERSION: "3.20"
+    links:
+      - postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
     env_file:
       - template.env
+      - postgres.env
