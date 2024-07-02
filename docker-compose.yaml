@@ -27,4 +27,4 @@ services:
         condition: service_healthy
     env_file:
       - example.env
-      # - postgres.env
+      - postgres.env

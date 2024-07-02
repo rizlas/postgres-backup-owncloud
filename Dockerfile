@@ -24,7 +24,10 @@ ENV PGDUMP_EXTRA_OPTS=""
 ENV TZ="UTC"
 
 WORKDIR /app
+RUN chown pbo:pbo /app
+
 USER pbo
+
 COPY --chown=pbo:pbo src/ .
 
 # CMD ["sh", "entrypoint.sh"]
