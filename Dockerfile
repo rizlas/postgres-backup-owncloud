@@ -4,7 +4,7 @@ FROM alpine:${ALPINE_VERSION}
 ARG TARGETOS
 ARG TARGETARCH
 ARG GO_CRON_VERSION=v0.0.10
-ARG GO_CRON_URL=https://github.com/prodrigestivill/go-cron/releases/download/$GO_CRON_VERSION/go-cron-$TARGETOS-$TARGETARCH.gz
+ARG GO_CRON_URL=https://github.com/prodrigestivill/go-cron/releases/download/$GO_CRON_VERSION/go-cron-$TARGETOS-$TARGETARCH-static.gz
 
 RUN <<EOF
 apk update
@@ -20,19 +20,13 @@ EOF
 ENV BACKUP_KEEP_DAYS=7
 ENV SCHEDULE="@daily"
 ENV PASSPHRASE="loremipsum"
+ENV HEALTHCHECK_PORT=8080
 ENV PGDUMP_EXTRA_OPTS=""
 ENV POSTGRES_HOST="postgres"
 ENV POSTGRES_PORT=5432
 ENV POSTGRES_DB="postgres"
 ENV POSTGRES_PASSWORD="password"
 ENV POSTGRES_USER="user"
-ENV S3_ACCESS_KEY_ID=""
-ENV S3_BUCKET=""
-ENV S3_ENDPOINT=""
-ENV S3_PATH="backup"
-ENV S3_REGION="us-west-1"
-ENV S3_S3V4="no"
-ENV S3_SECRET_ACCESS_KEY=""
 ENV TZ="UTC"
 
 WORKDIR /app
@@ -40,3 +34,4 @@ USER pbo
 COPY --chown=pbo:pbo src/ .
 
 CMD ["sh", "run.sh"]
+# CMD ["tail", "-f", "/dev/null"]
