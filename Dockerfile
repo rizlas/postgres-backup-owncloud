@@ -19,19 +19,13 @@ EOF
 # Environment defaults
 ENV BACKUP_KEEP_DAYS=7
 ENV SCHEDULE="@daily"
-ENV PASSPHRASE="loremipsum"
 ENV HEALTHCHECK_PORT=8080
 ENV PGDUMP_EXTRA_OPTS=""
-ENV POSTGRES_HOST="postgres"
-ENV POSTGRES_PORT=5432
-ENV POSTGRES_DB="postgres"
-ENV POSTGRES_PASSWORD="password"
-ENV POSTGRES_USER="user"
 ENV TZ="UTC"
 
 WORKDIR /app
 USER pbo
 COPY --chown=pbo:pbo src/ .
 
-CMD ["sh", "run.sh"]
-# CMD ["tail", "-f", "/dev/null"]
+# CMD ["sh", "entrypoint.sh"]
+CMD ["tail", "-f", "/dev/null"]

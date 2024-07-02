@@ -22,11 +22,9 @@ services:
       context: .
       args:
         ALPINE_VERSION: "3.20"
-    links:
-      - postgres
     depends_on:
       postgres:
         condition: service_healthy
     env_file:
-      - template.env
-      - postgres.env
+      - example.env
+      # - postgres.env

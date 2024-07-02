@@ -1,9 +1,6 @@
 #!/bin/sh
 
-set -eu
-set -o pipefail
-
-source ./env.sh
+set -euo pipefail
 
 echo "Creating backup of $POSTGRES_DB database..."
 pg_dump --format=custom \
