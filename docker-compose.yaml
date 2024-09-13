@@ -25,6 +25,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      - TZ=UTC
     env_file:
-      - example.env
+      - pgbackups.env
       - postgres.env

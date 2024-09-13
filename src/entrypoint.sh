@@ -7,6 +7,9 @@ mandatory_env_vars="
     POSTGRES_DB
     POSTGRES_PASSWORD
     POSTGRES_USER
+    OWNCLOUD_SHARE_ID
+    OWNCLOUD_SHARE_PASSWORD
+    OWNCLOUD_FQDN
 "
 
 # Iterate through the list and print the variables and their values
