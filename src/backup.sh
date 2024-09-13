@@ -17,7 +17,7 @@ export PGHOST="${POSTGRES_HOST}"
 export PGPORT="${POSTGRES_PORT}"
 export PGDATABASE="${POSTGRES_DB}"
 
-TIMESTAMP=$(date +"%Y-%m-%d_%H:%M:%S")
+TIMESTAMP=$(date +"%Y-%m-%d")
 BACKUPS_DIR=backups
 ENCRYPTED_BACKUPS_DIR=encrypted_backups
 DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}.dump
@@ -34,15 +34,15 @@ if [ -n "${GPG_EMAILS:-}" ]; then
   echo -e "Encrypting backup using gpg emails...\n"
   for EMAIL in $(echo $GPG_EMAILS | tr "," "\n"); do
     echo "Using $EMAIL"
-    OUTPUT_FILENAME=${DUMP_FILENAME}_${EMAIL}.gpg
+    ENCRYPTED_DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}_${EMAIL}.dump.gpg
 
     # Fetch the public key using WKD
     gpg --auto-key-locate clear,wkd --locate-keys "$EMAIL"
 
     # Encrypt the dump file using the located public key
-    gpg --batch --encrypt --recipient "$EMAIL" --trust-model always --output $ENCRYPTED_BACKUPS_DIR/$OUTPUT_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
+    gpg --batch --encrypt --recipient "$EMAIL" --trust-model always --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
 
-    echo -e "Backup encrypted for $EMAIL as $OUTPUT_FILENAME\n"
+    echo -e "Backup encrypted for $EMAIL as $ENCRYPTED_DUMP_FILENAME\n"
     ENCRYPTION_DONE=true
   done
 elif [ -n "${PASSPHRASE:-}" ]; then
@@ -73,19 +73,28 @@ do
   fi
 done
 
-echo -e "Backup complete.\n"
+echo -e "\nBackup complete.\n"
 
-# if [ -n "$BACKUP_KEEP_DAYS" ]; then
-#   sec=$((86400*BACKUP_KEEP_DAYS))
-#   date_from_remove=$(date -d "@$(($(date +%s) - sec))" +%Y-%m-%d)
-#   backups_query="Contents[?LastModified<='${date_from_remove} 00:00:00'].{Key: Key}"
+echo "Removing old backups from shared folder"
 
-#   echo "Removing old backups from $S3_BUCKET..."
-#   aws $aws_args s3api list-objects \
-#     --bucket "${S3_BUCKET}" \
-#     --prefix "${S3_PREFIX}" \
-#     --query "${backups_query}" \
-#     --output text \
-#     | xargs -n1 -t -I 'KEY' aws $aws_args s3 rm s3://"${S3_BUCKET}"/'KEY'
-#   echo "Removal complete."
-# fi
+XML_TEMP_FILE=$(mktemp)
+
+# List files
+curl -s -X PROPFIND -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
+    https://$OWNCLOUD_FQDN/public.php/webdav -o $XML_TEMP_FILE
+
+OUTPUT=$(python3 "parse_xml.py" "$XML_TEMP_FILE" --days "$BACKUP_KEEP_DAYS")
+
+if [ -n "${OUTPUT:-}" ]; then
+  for file in $(echo $OUTPUT | tr "," "\n"); do
+    echo "Deleting: $file"
+
+    # Delete file
+    curl -s -X DELETE -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
+        "https://$OWNCLOUD_FQDN/public.php/webdav/$file"
+
+    echo "$file deleted."
+  done
+else
+  echo "No files to delete."
+fi
