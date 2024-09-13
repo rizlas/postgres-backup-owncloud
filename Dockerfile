@@ -10,7 +10,6 @@ RUN <<EOF
 apk update
 apk add --no-cache tzdata postgresql-client gnupg aws-cli curl
 curl --fail --retry 4 --retry-all-errors -L $GO_CRON_URL | gzip -d > /usr/local/bin/go-cron
-apk del curl
 addgroup -S pbo && adduser -DS pbo -G pbo
 chown pbo:pbo /usr/local/bin/go-cron
 chmod 770 /usr/local/bin/go-cron
