@@ -1,7 +1,6 @@
 #!/bin/sh
 
 mandatory_env_vars="
-    PASSPHRASE
     POSTGRES_HOST
     POSTGRES_PORT
     POSTGRES_DB
