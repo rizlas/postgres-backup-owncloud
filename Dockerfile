@@ -29,5 +29,6 @@ USER pbo
 
 COPY --chown=pbo:pbo src/ .
 
-# CMD ["sh", "entrypoint.sh"]
-CMD ["tail", "-f", "/dev/null"]
+CMD ["sh", "entrypoint.sh"]
+# Debug only
+# CMD ["tail", "-f", "/dev/null"]
