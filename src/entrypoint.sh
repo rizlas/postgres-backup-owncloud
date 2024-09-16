@@ -20,4 +20,4 @@ for var in $mandatory_env_vars; do
     fi
 done
 
-exec go-cron -s "$SCHEDULE" -p "$HEALTHCHECK_PORT" -- /bin/sh backup.sh
+exec /usr/local/bin/go-cron -s "$SCHEDULE" -p "$HEALTHCHECK_PORT" -- /bin/sh /app/backup.sh
