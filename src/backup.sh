@@ -40,7 +40,7 @@ if [ -n "${GPG_EMAILS:-}" ]; then
     gpg --auto-key-locate clear,wkd --locate-keys "$EMAIL"
 
     # Encrypt the dump file using the located public key
-    gpg --batch --encrypt --recipient "$EMAIL" --trust-model always --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
+    gpg --batch --encrypt --recipient "$EMAIL" --trust-model $TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
 
     echo -e "Backup encrypted for $EMAIL as $ENCRYPTED_DUMP_FILENAME\n"
     ENCRYPTION_DONE=true

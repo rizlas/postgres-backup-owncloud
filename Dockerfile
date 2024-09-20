@@ -20,6 +20,7 @@ ENV BACKUP_KEEP_DAYS=7
 ENV SCHEDULE="@daily"
 ENV HEALTHCHECK_PORT=8080
 ENV PGDUMP_EXTRA_OPTS=""
+ENV TRUST_MODEL=auto
 ENV TZ="UTC"
 
 WORKDIR /app
@@ -30,5 +31,3 @@ USER pbo
 COPY --chown=pbo:pbo src/ .
 
 CMD ["sh", "entrypoint.sh"]
-# Debug only
-# CMD ["tail", "-f", "/dev/null"]
