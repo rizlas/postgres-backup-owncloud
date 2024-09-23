@@ -13,7 +13,7 @@ upload_to_owncloud() {
           https://$OWNCLOUD_FQDN/public.php/webdav/$filename
       echo -e "$filename uploaded to https://$OWNCLOUD_FQDN\n"
     else
-      echo -e "Not a file, $filename not uploaded\n"
+      echo -e "Not a file, $1 not uploaded\n"
     fi
 }
 
@@ -48,7 +48,7 @@ if [ -n "${GPG_EMAILS:-}" ]; then
     # Encrypt the dump file using the located public key
     gpg --batch --encrypt --recipient "$EMAIL" --trust-model $GPG_TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
     echo -e "Backup encrypted for $EMAIL as $ENCRYPTED_DUMP_FILENAME\n"
-    upload_to_owncloud "$BACKUPS_DIR/$DUMP_FILENAME"
+    upload_to_owncloud "$ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME"
   done
 elif [ -n "${PASSPHRASE:-}" ]; then
   # Remove a file with the same name if exists
