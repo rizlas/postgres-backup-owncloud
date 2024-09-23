@@ -33,8 +33,6 @@ mkdir -p $BACKUPS_DIR
 mkdir -p $ENCRYPTED_BACKUPS_DIR
 pg_dump --format=custom $PGDUMP_EXTRA_OPTS > $BACKUPS_DIR/$DUMP_FILENAME
 
-ENCRYPTION_DONE=false
-
 # Encrypt the backup based on provided environment variables
 if [ -n "${GPG_EMAILS:-}" ]; then
   echo -e "Encrypting backup using gpg emails...\n"
@@ -51,16 +49,18 @@ if [ -n "${GPG_EMAILS:-}" ]; then
     upload_to_owncloud "$ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME"
   done
 elif [ -n "${PASSPHRASE:-}" ]; then
+  ENCRYPTED_DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}.dump.gpg
   # Remove a file with the same name if exists
-  if [ -f $ENCRYPTED_BACKUPS_DIR/$DUMP_FILENAME.gpg ]; then
-    rm $ENCRYPTED_BACKUPS_DIR/$DUMP_FILENAME.gpg
+  if [ -f $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME ]; then
+    rm $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME
   fi
 
   echo "Encrypting backup using passphrase..."
-  gpg --symmetric --batch --passphrase "$PASSPHRASE" --output $ENCRYPTED_BACKUPS_DIR/$DUMP_FILENAME.gpg $BACKUPS_DIR/$DUMP_FILENAME
-  upload_to_owncloud "$BACKUPS_DIR/$DUMP_FILENAME"
+  gpg --symmetric --batch --passphrase "$PASSPHRASE" --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
+  upload_to_owncloud "$ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME"
 else
   echo "No encryption specified. Skipping encryption step."
+  upload_to_owncloud "$BACKUPS_DIR/$DUMP_FILENAME"
 fi
 
 echo -e "\nBackup complete.\n"
