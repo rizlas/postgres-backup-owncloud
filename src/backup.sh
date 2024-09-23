@@ -73,7 +73,7 @@ XML_TEMP_FILE=$(mktemp)
 curl -s -X PROPFIND -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
     https://$OWNCLOUD_FQDN/public.php/webdav -o $XML_TEMP_FILE
 
-OUTPUT=$(python3 "parse_xml.py" "$XML_TEMP_FILE" --days "$BACKUP_KEEP_DAYS")
+OUTPUT=$(python3 "parse_xml.py" filterdate "$XML_TEMP_FILE" --days "$BACKUP_KEEP_DAYS")
 
 if [ -n "${OUTPUT:-}" ]; then
   for file in $(echo $OUTPUT | tr "," "\n"); do
