@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 
-from os.path import basename
+from os.path import basename, splitext
 
 import xml.etree.ElementTree as E
 from datetime import datetime, timedelta
 import argparse
+
+VALID_EXTENSION = ["dump", "dump.gpg"]
 
 
 def main():
@@ -28,9 +30,12 @@ def main():
 
     # Retrieve file names and modify date from xml
     for response in root.findall("{DAV:}response"):
-        filename = basename(response.find("{DAV:}href").text.strip())
+        full_name = response.find("{DAV:}href").text.strip()
+        filename = basename(full_name)
+        _, file_extensions = splitext(full_name)
+
         # No filename no party
-        if filename == "":
+        if filename == "" and file_extensions not in VALID_EXTENSION:
             continue
 
         properties = response.find("{DAV:}propstat")
@@ -42,7 +47,7 @@ def main():
         )
 
         # Files older than X days
-        if last_modified_date <= cutoff_date:
+        if last_modified_date < cutoff_date:
             files_to_be_deleted.append(filename)
 
     # !!! This print will be used from backup.sh

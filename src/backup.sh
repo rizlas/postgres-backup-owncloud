@@ -2,14 +2,20 @@
 
 set -euo pipefail
 
-cleanup() {
-    echo -e "\nCleaning up backup directories..."
-    rm -f "$BACKUPS_DIR"/*
-    rm -f "$ENCRYPTED_BACKUPS_DIR"/*
-    echo -e "Backup directories cleaned.\n"
-}
+upload_to_owncloud() {
+    # Check if it is a file (not a directory)
+    if [ -f "$1" ]; then
+      echo "Uploading: $1"
+      filename=$(basename "$1")
 
-trap cleanup EXIT
+      curl -k -T $1 -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
+          -H 'X-Requested-With: XMLHttpRequest' \
+          https://$OWNCLOUD_FQDN/public.php/webdav/$filename
+      echo -e "$filename uploaded to https://$OWNCLOUD_FQDN\n"
+    else
+      echo -e "Not a file, $filename not uploaded\n"
+    fi
+}
 
 export PGUSER="${POSTGRES_USER}"
 export PGPASSWORD="${POSTGRES_PASSWORD}"
@@ -36,46 +42,30 @@ if [ -n "${GPG_EMAILS:-}" ]; then
     echo "Using $EMAIL"
     ENCRYPTED_DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}_${EMAIL}.dump.gpg
 
-    # Fetch the public key using WKD
-    gpg --auto-key-locate clear,wkd --locate-keys "$EMAIL"
+    # Fetch the public key
+    gpg --auto-key-locate $GPG_KEY_LOCATE --locate-keys "$EMAIL"
 
     # Encrypt the dump file using the located public key
-    gpg --batch --encrypt --recipient "$EMAIL" --trust-model $TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
-
+    gpg --batch --encrypt --recipient "$EMAIL" --trust-model $GPG_TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
     echo -e "Backup encrypted for $EMAIL as $ENCRYPTED_DUMP_FILENAME\n"
-    ENCRYPTION_DONE=true
+    upload_to_owncloud "$BACKUPS_DIR/$DUMP_FILENAME"
   done
 elif [ -n "${PASSPHRASE:-}" ]; then
+  # Remove a file with the same name if exists
+  if [ -f $ENCRYPTED_BACKUPS_DIR/$DUMP_FILENAME.gpg ]; then
+    rm $ENCRYPTED_BACKUPS_DIR/$DUMP_FILENAME.gpg
+  fi
+
   echo "Encrypting backup using passphrase..."
   gpg --symmetric --batch --passphrase "$PASSPHRASE" --output $ENCRYPTED_BACKUPS_DIR/$DUMP_FILENAME.gpg $BACKUPS_DIR/$DUMP_FILENAME
-  ENCRYPTION_DONE=true
+  upload_to_owncloud "$BACKUPS_DIR/$DUMP_FILENAME"
 else
   echo "No encryption specified. Skipping encryption step."
 fi
 
-if [ "$ENCRYPTION_DONE" = true ]; then
-  folder="$ENCRYPTED_BACKUPS_DIR"
-else
-  folder="$BACKUPS_DIR"
-fi
-
-# Loop over all files in the folder
-for file in "$folder"/*
-do
-  # Check if it is a file (not a directory)
-  if [ -f "$file" ]; then
-    echo "Uploading: $file"
-    filename=$(basename "$file")
-
-    curl -k -T $file -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-        -H 'X-Requested-With: XMLHttpRequest' \
-        https://$OWNCLOUD_FQDN/public.php/webdav/$filename
-  fi
-done
-
 echo -e "\nBackup complete.\n"
 
-echo "Removing old backups from shared folder"
+echo "Removing old backups older than $BACKUP_KEEP_DAYS days from ownCloud shared folder and filesystem"
 
 XML_TEMP_FILE=$(mktemp)
 
@@ -98,3 +88,6 @@ if [ -n "${OUTPUT:-}" ]; then
 else
   echo "No files to delete."
 fi
+
+find ${BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump" -exec rm {} \;
+find ${ENCRYPTED_BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump.gpg" -exec rm {} \;
