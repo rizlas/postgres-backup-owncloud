@@ -28,3 +28,5 @@ services:
     env_file:
       - pgbackups.env
       - postgres.env
+    volumes:
+      - ~/.gnupg:/home/pbo/.gnupg

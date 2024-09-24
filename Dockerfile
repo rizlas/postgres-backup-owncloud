@@ -1,17 +1,21 @@
 ARG ALPINE_VERSION
-FROM alpine:${ALPINE_VERSION}
+FROM alpine:$ALPINE_VERSION
 
 ARG TARGETOS
 ARG TARGETARCH
 ARG GO_CRON_VERSION=v0.0.10
 ARG GO_CRON_URL=https://github.com/prodrigestivill/go-cron/releases/download/$GO_CRON_VERSION/go-cron-$TARGETOS-$TARGETARCH-static.gz
+ARG UID=1000
+ARG GID=1000
+ARG USER=pbo
+ARG GROUP=pbo
 
 RUN <<EOF
 apk update
-apk add --no-cache tzdata postgresql-client gnupg aws-cli curl
+apk add --no-cache tzdata postgresql-client python3 gnupg curl
 curl --fail --retry 4 --retry-all-errors -L $GO_CRON_URL | gzip -d > /usr/local/bin/go-cron
-addgroup -S pbo && adduser -DS pbo -G pbo
-chown pbo:pbo /usr/local/bin/go-cron
+addgroup -g $GID $GROUP && adduser -D -u $UID -G $GROUP $USER
+chown $USER:$GROUP /usr/local/bin/go-cron
 chmod 770 /usr/local/bin/go-cron
 EOF
 
@@ -25,10 +29,10 @@ ENV GPG_KEY_LOCATE=wkd
 ENV TZ="UTC"
 
 WORKDIR /app
-RUN chown pbo:pbo /app
+RUN chown $USER:$GROUP /app
 
-USER pbo
+USER $USER
 
-COPY --chown=pbo:pbo src/ .
+COPY --chown=$USER:$GROUP src/ .
 
 CMD ["sh", "entrypoint.sh"]
