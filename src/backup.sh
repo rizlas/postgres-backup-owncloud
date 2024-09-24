@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+cleanup() {
+    #Clean up /tmp
+    rm /tmp/tmp.*
+}
+
 upload_to_owncloud() {
     # Check if it is a file (not a directory)
     if [ -f "$1" ]; then
@@ -17,11 +22,8 @@ upload_to_owncloud() {
     fi
 }
 
-export PGUSER="${POSTGRES_USER}"
-export PGPASSWORD="${POSTGRES_PASSWORD}"
-export PGHOST="${POSTGRES_HOST}"
-export PGPORT="${POSTGRES_PORT}"
-export PGDATABASE="${POSTGRES_DB}"
+trap cleanup EXIT
+source ./env.sh
 
 TIMESTAMP=$(date +"%Y-%m-%d")
 BACKUPS_DIR=backups
@@ -91,6 +93,3 @@ fi
 
 find ${BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump" -exec rm {} \;
 find ${ENCRYPTED_BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump.gpg" -exec rm {} \;
-
-#Clean up /tmp
-rm /tmp/tmp.*

@@ -11,7 +11,7 @@ mandatory_env_vars="
     OWNCLOUD_FQDN
 "
 
-# Iterate through the list and print the variables and their values
+# Iterate through the list and print the missing variables
 for var in $mandatory_env_vars; do
     value=$(eval echo \${$var})
     if [ -z "$value" ]; then
