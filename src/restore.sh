@@ -28,6 +28,7 @@ if [ -n "${GPG_RESTORE_EMAIL:-}" ]; then
   LATEST_BACKUP=$(python3 "parse_xml.py" latest "$XML_TEMP_FILE" --user-email "$GPG_RESTORE_EMAIL")
   download_from_owncloud
   # You must have the recipient key that was used to encrypt
+  KEY_PASSHPRASE=""
   if [ -n "${GPG_RESTORE_EMAIL_PASSPHRASE:-}" ]; then
     KEY_PASSHPRASE="--pinentry-mode=loopback --passphrase $GPG_RESTORE_EMAIL_PASSPHRASE"
   fi
