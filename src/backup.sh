@@ -3,20 +3,24 @@
 set -euo pipefail
 
 cleanup() {
-    #Clean up /tmp
-    rm /tmp/tmp.*
+  #Clean up /tmp
+  rm -f /tmp/tmp.*
 }
 
 upload_to_owncloud() {
     # Check if it is a file (not a directory)
     if [ -f "$1" ]; then
-      echo "Uploading: $1"
-      filename=$(basename "$1")
+        if [ "$DRY_RUN" = true ]; then
+            echo "DRY RUN: Skipping upload for $1"
+        else
+            echo "Uploading: $1"
+            filename=$(basename "$1")
 
-      curl -k -T $1 -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-          -H 'X-Requested-With: XMLHttpRequest' \
-          https://$OWNCLOUD_FQDN/public.php/webdav/$filename
-      echo -e "$filename uploaded to https://$OWNCLOUD_FQDN\n"
+            curl -k -T $1 -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
+                -H 'X-Requested-With: XMLHttpRequest' \
+                https://$OWNCLOUD_FQDN/public.php/webdav/$filename
+            echo -e "$filename uploaded to https://$OWNCLOUD_FQDN\n"
+        fi
     else
       echo -e "Not a file, $1 not uploaded\n"
     fi
@@ -46,19 +50,14 @@ if [ -n "${GPG_EMAILS:-}" ]; then
     gpg --auto-key-locate $GPG_KEY_LOCATE --locate-keys "$EMAIL"
 
     # Encrypt the dump file using the located public key
-    gpg --batch --encrypt --recipient "$EMAIL" --trust-model $GPG_TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
+    gpg --batch --yes --encrypt --recipient "$EMAIL" --trust-model $GPG_TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
     echo -e "Backup encrypted for $EMAIL as $ENCRYPTED_DUMP_FILENAME\n"
     upload_to_owncloud "$ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME"
   done
 elif [ -n "${PASSPHRASE:-}" ]; then
   ENCRYPTED_DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}.dump.gpg
-  # Remove a file with the same name if exists
-  if [ -f $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME ]; then
-    rm $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME
-  fi
-
   echo "Encrypting backup using passphrase..."
-  gpg --symmetric --batch --passphrase "$PASSPHRASE" --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
+  gpg --symmetric --batch --yes --passphrase "$PASSPHRASE" --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
   upload_to_owncloud "$ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME"
 else
   echo "No encryption specified. Skipping encryption step."
@@ -81,15 +80,20 @@ if [ -n "${OUTPUT:-}" ]; then
   for file in $(echo $OUTPUT | tr "," "\n"); do
     echo "Deleting: $file"
 
-    # Delete file
-    curl -s -X DELETE -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-        "https://$OWNCLOUD_FQDN/public.php/webdav/$file"
-
-    echo "$file deleted."
+    if [ "$DRY_RUN" = true ]; then
+        echo "DRY RUN: Skipping deletion for $file"
+    else
+        # Delete file
+        curl -s -X DELETE -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
+            "https://$OWNCLOUD_FQDN/public.php/webdav/$file"
+        echo "$file deleted."
+    fi
   done
 else
   echo "No files to delete."
 fi
 
-find ${BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump" -exec rm {} \;
-find ${ENCRYPTED_BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump.gpg" -exec rm {} \;
+if [ "$DRY_RUN" = false ]; then
+  find ${BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump" -exec rm {} \;
+  find ${ENCRYPTED_BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump.gpg" -exec rm {} \;
+fi

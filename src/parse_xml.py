@@ -35,6 +35,11 @@ def parse_cli():
     )
     parser_latest.add_argument("xml_file", help="The XML file to process")
     parser_latest.add_argument(
+        "--database-name",
+        required=True,
+        help="Filter backup crypted with a specific database name",
+    )
+    parser_latest.add_argument(
         "--user-email",
         required=False,
         default="",
@@ -91,7 +96,7 @@ def filterdate(files, days):
     print(",".join(files_to_be_deleted))
 
 
-def latest(files, user_email, passphrase_crypted):
+def latest(files, user_email, database_name, passphrase_crypted):
     filtered_files = []
     extension_to_find = ".gpg" if user_email or passphrase_crypted else ".dump"
 
@@ -99,8 +104,10 @@ def latest(files, user_email, passphrase_crypted):
         _, file_extensions = splitext(filename)
 
         # No filename no party
-        # Skip useless extensions
-        if file_extensions != extension_to_find:
+        # Skip useless extensions or databases with different name
+        if file_extensions != extension_to_find or not filename.startswith(
+            database_name
+        ):
             continue
 
         # If user email is specified, skip backups without the email in it's filename
@@ -121,7 +128,7 @@ def main():
     if args.command == "filterdate":
         filterdate(files, args.days)
     elif args.command == "latest":
-        latest(files, args.user_email, args.passphrase_crypted)
+        latest(files, args.user_email, args.database_name, args.passphrase_crypted)
 
 
 if __name__ == "__main__":
