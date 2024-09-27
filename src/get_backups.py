@@ -150,6 +150,11 @@ def latest(files, user_email, database_name, passphrase_crypted):
         if user_email and user_email not in filename:
             continue
 
+        # If user_email is not specified, skip backups that contain an email in the
+        # filename
+        if not user_email and "@" in filename:
+            continue
+
         filtered_files.append((filename, last_modified_date))
 
     if filtered_files:
