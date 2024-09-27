@@ -30,3 +30,7 @@ services:
       - postgres.env
     volumes:
       - ~/.gnupg:/home/pbo/.gnupg
+      # Example volume if RESTORE_MODE local is used
+      # Hint: mount always as read only
+      # - "~/ownCloud/folder_with_backups:/opt/backups:ro"
+      # Then set env var like this SHARE_PATH=/opt/backups

@@ -11,16 +11,16 @@ cleanup() {
 trap cleanup EXIT
 source ./env.sh
 
-echo -e "Restoring backup using $MODE mode!\n"
+echo -e "Restoring backup using $RESTORE_MODE mode!\n"
 
-if [ "$MODE" = "remote" ]; then
+if [ "$RESTORE_MODE" = "remote" ]; then
   XML_TEMP_FILE=$(mktemp)
   SOURCE="--xml-file $XML_TEMP_FILE"
 
   # List files
   curl -s -X PROPFIND -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
       https://$OWNCLOUD_FQDN/public.php/webdav -o $XML_TEMP_FILE
-elif [ "$MODE" = "local" ]; then
+elif [ "$RESTORE_MODE" = "local" ]; then
   SOURCE="--share-path $SHARE_PATH"
 fi
 
@@ -35,7 +35,7 @@ else
   LATEST_BACKUP=$(python3 "get_backups.py" latest $SOURCE --database-name $POSTGRES_DB)
 fi
 
-if [ "$MODE" = "remote" ]; then
+if [ "$RESTORE_MODE" = "remote" ]; then
   # Download from ownCloud
   if [ -z "${LATEST_BACKUP:-}" ]; then
     echo "No backup file specified to download. Skipping download."
@@ -56,7 +56,7 @@ fi
 # Avoid use the original file
 # Avoid to mess with path between mode remote and mode local when gpg or pg_restore
 # need to retrieve the file
-if [ "$MODE" = "local" ]; then
+if [ "$RESTORE_MODE" = "local" ]; then
   cp $SHARE_PATH/$LATEST_BACKUP /tmp/$LATEST_BACKUP
 fi
 
