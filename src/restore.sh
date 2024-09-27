@@ -8,7 +8,7 @@ cleanup() {
   rm -f /tmp/tmp.*
 }
 
-trap cleanup EXIT
+trap "cleanup" EXIT
 source ./env.sh
 
 echo -e "Restoring backup using $RESTORE_MODE mode!\n"

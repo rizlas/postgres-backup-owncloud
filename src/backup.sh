@@ -1,10 +1,14 @@
 #!/bin/sh
 
-set -euo pipefail
+set -Eeuo pipefail
 
 cleanup() {
   #Clean up /tmp
   rm -f /tmp/tmp.*
+}
+
+on_error() {
+  run_hooks "error"
 }
 
 upload_to_owncloud() {
@@ -26,13 +30,29 @@ upload_to_owncloud() {
     fi
 }
 
-trap cleanup EXIT
+run_hooks() {
+  run_parts_opts="-a $1 --exit-on-error"
+
+  # if [ "$DRY_RUN" = true ]; then
+  #   run_parts_opts="$run_parts_opts --test"
+  # fi
+
+  if [ -d "${HOOKS_DIR}" ]; then
+    run-parts $run_parts_opts "${HOOKS_DIR}"
+  fi
+}
+
+trap "on_error" ERR
+trap "cleanup" EXIT
 source ./env.sh
 
+HOOKS_DIR="hooks"
 TIMESTAMP=$(date +"%Y-%m-%d")
 BACKUPS_DIR=backups
 ENCRYPTED_BACKUPS_DIR=encrypted_backups
 DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}.dump
+
+run_hooks "pre-backup"
 
 echo "Creating backup of '$POSTGRES_DB' database..."
 mkdir -p $BACKUPS_DIR
@@ -97,3 +117,5 @@ if [ "$DRY_RUN" = false ]; then
   find ${BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump" -exec rm {} \;
   find ${ENCRYPTED_BACKUPS_DIR} -type f -mtime "+${BACKUP_KEEP_DAYS}" -name "*.dump.gpg" -exec rm {} \;
 fi
+
+run_hooks "post-backup"

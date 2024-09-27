@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# Possible actions: error, pre-backup, post-backup
+ACTION="$1"
+STATUS=""
+
+send_webhook() {
+  # Check if any WEBHOOK_URL is defined and not empty
+  if [ -n "$1" ]; then
+    echo "Executing webhook call to $1 with status: $STATUS"
+    curl --request POST \
+      --url "$1" \
+      --header 'Content-Type: application/json' \
+      --data '{"status": "$STATUS"}' \
+      --max-time 10 \
+      --retry 5 \
+      ${WEBHOOK_EXTRA_ARGS}
+  fi
+}
+
+case "$ACTION" in
+  "error")
+    STATUS="error"
+    send_webhook "$WEBHOOK_URL"
+    send_webhook "$WEBHOOK_ERROR_URL"
+  ;;
+
+  "pre-backup")
+    STATUS="pre-backup"
+    send_webhook "$WEBHOOK_PRE_BACKUP_URL"
+  ;;
+
+  "post-backup")
+    STATUS="post-backup"
+    send_webhook "$WEBHOOK_URL"
+    send_webhook "$WEBHOOK_POST_BACKUP_URL"
+  ;;
+esac
