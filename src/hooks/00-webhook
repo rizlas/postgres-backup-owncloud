@@ -10,11 +10,11 @@ send_webhook() {
     echo "Executing webhook call to $1 with status: $STATUS"
     curl --request POST \
       --url "$1" \
-      --header 'Content-Type: application/json' \
-      --data '{"status": "$STATUS"}' \
+      --header "Content-Type: application/json" \
+      --data "{\"status\": \"$STATUS\"}" \
       --max-time 10 \
       --retry 5 \
-      ${WEBHOOK_EXTRA_ARGS}
+      $WEBHOOK_EXTRA_ARGS
   fi
 }
 
