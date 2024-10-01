@@ -73,7 +73,28 @@ def parse_cli():
     return args
 
 
-def parse_xml(xml_file):
+def parse_xml(xml_file: str) -> list:
+    """Parse XML file generated via WebDAV's PROPFIND.
+
+    This function reads an XML file, finds all valid file entries (based on their
+    extension), and returns a list of tuples containing the filename and its last
+    modified date. The date is normalized to midnight (00:00:00) for comparison
+    purposes.
+
+    Parameters
+    ----------
+    xml_file : str
+        Path to the XML file to be parsed.
+
+    Returns
+    -------
+    list
+        A list of tuples where each tuple contains:
+            - filename (str): The name of the file extracted from the WebDAV response.
+            - last_modified_date (datetime): The last modified date, truncated to
+              midnight.
+
+    """
     tree = E.parse(xml_file)
     root = tree.getroot()
     files = []
@@ -99,7 +120,26 @@ def parse_xml(xml_file):
     return files
 
 
-def list_folder(folder_path):
+def list_folder(folder_path: str) -> list:
+    """List files in a specified folder and retrieve their last modified dates.
+
+    This returns a list of tuples containing each filename and its last modified date.
+    The date is normalized to midnight (00:00:00) for comparison purposes.
+
+    Parameters
+    ----------
+    folder_path : str
+        Path to the folder to be scanned.
+
+    Returns
+    -------
+    list
+        A list of tuples where each tuple contains:
+            - filename (str): The name of the file.
+            - last_modified_date (datetime): The last modified date, truncated to
+              midnight.
+
+    """
     files = []
 
     for filename in os.listdir(folder_path):
@@ -116,7 +156,25 @@ def list_folder(folder_path):
     return files
 
 
-def filterdate(files, days):
+def filterdate(files: list, days: int) -> None:
+    """Filter a list of files and print those older than a specified number of days.
+
+    This function compares the last modified dates of the provided files against a
+    cutoff date, which is `n` days before the current date. It filters out files that
+    are older than the cutoff and prints their names as a comma-separated string. This
+    output can be used by external scripts (e.g. `backup.sh`).
+
+    Parameters
+    ----------
+    files : list
+        A list of tuples where each tuple contains:
+            - filename (str): The name of the file.
+            - last_modified_date (datetime): The last modified date, truncated to
+              midnight.
+    days : int
+        The number of days to use as a cutoff. Files older than this many days will be
+        filtered.
+    """
     # Get timenow, only day month year count, and subtract n days.
     now = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     cutoff_date = now - timedelta(days=days)
@@ -132,7 +190,39 @@ def filterdate(files, days):
     print(",".join(files_to_be_deleted))
 
 
-def latest(files, user_email, database_name, passphrase_crypted):
+def latest(files: list, user_email: str, database_name: str, passphrase_crypted: bool):
+    """Find and print the latest backup file from a list of files.
+
+    Find and print the latest backup file from a list of files, filtered by user email,
+    database name, and whether the file is passphrase-encrypted.
+
+    This function filters the provided list of files based on several criteria: - The
+    filename must match the specified database name. - The file extension must either be
+    `.gpg` (for passphrase-encrypted or
+      email-specific files) or `.dump` (for non-encrypted, general files).
+    - If a user email is provided, the filename must contain the email. If no email is
+      provided, files containing an email (with '@') are excluded.
+
+    The latest file based on its last modified date is then printed. This output is
+    intended for external use, such as by a shell script (e.g. `restore.sh`).
+
+    Parameters
+    ----------
+    files : list
+        A list of tuples where each tuple contains:
+            - filename (str): The name of the file.
+            - last_modified_date (datetime): The last modified date, truncated to
+              midnight.
+    user_email : str
+        An optional email address to filter backups. Files must contain this email in
+        their name if provided. If empty, files containing an email are excluded.
+    database_name : str
+        The name of the database to filter backups. Filenames must start with this
+        database name.
+    passphrase_crypted : bool
+        A flag indicating whether to search for passphrase-encrypted files (with `.gpg`
+        extension). If False, the function searches for non-encrypted `.dump` files.
+    """
     filtered_files = []
     extension_to_find = ".gpg" if user_email or passphrase_crypted else ".dump"
 

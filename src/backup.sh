@@ -33,9 +33,9 @@ upload_to_owncloud() {
 run_hooks() {
     run_parts_opts="-a $1 --exit-on-error"
     
-    # if [ "$DRY_RUN" = true ]; then
-    #   run_parts_opts="$run_parts_opts --test"
-    # fi
+    if [ "$DRY_RUN" = true ]; then
+        run_parts_opts="$run_parts_opts --test"
+    fi
     
     if [ -d "${HOOKS_DIR}" ]; then
         run-parts $run_parts_opts "${HOOKS_DIR}"
