@@ -3,7 +3,7 @@ FROM alpine:$ALPINE_VERSION
 
 ARG TARGETOS
 ARG TARGETARCH
-ARG GO_CRON_VERSION=v0.0.10
+ARG GO_CRON_VERSION=v0.0.11
 ARG GO_CRON_URL=https://github.com/prodrigestivill/go-cron/releases/download/$GO_CRON_VERSION/go-cron-$TARGETOS-$TARGETARCH-static.gz
 ARG UID=1000
 ARG GID=1000
