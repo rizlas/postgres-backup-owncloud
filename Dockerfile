@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION
-FROM alpine:$ALPINE_VERSION
+FROM alpine:${ALPINE_VERSION:-3.20}
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -36,5 +36,6 @@ RUN chown $USER:$GROUP /app
 USER $USER
 
 COPY --chown=$USER:$GROUP src/ .
+RUN chmod +x /app/*.sh
 
 CMD ["sh", "entrypoint.sh"]
