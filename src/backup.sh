@@ -62,18 +62,26 @@ pg_dump --format=custom $PGDUMP_EXTRA_OPTS > $BACKUPS_DIR/$DUMP_FILENAME
 # Encrypt the backup based on provided environment variables
 if [ -n "${GPG_EMAILS:-}" ]; then
     echo -e "Encrypting backup using gpg emails...\n"
+    GPG_ERRORS=0
     for EMAIL in $(echo $GPG_EMAILS | tr "," "\n"); do
         echo "Using $EMAIL"
         ENCRYPTED_DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}_${EMAIL}.dump.gpg
-        
+
         # Fetch the public key
-        gpg --auto-key-locate $GPG_KEY_LOCATE --locate-keys "$EMAIL"
-        
         # Encrypt the dump file using the located public key
-        gpg --batch --yes --encrypt --recipient "$EMAIL" --trust-model $GPG_TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME
-        echo -e "Backup encrypted for $EMAIL as $ENCRYPTED_DUMP_FILENAME\n"
-        upload_to_owncloud "$ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME"
+        if gpg --auto-key-locate $GPG_KEY_LOCATE --locate-keys "$EMAIL" && \
+           gpg --batch --yes --encrypt --recipient "$EMAIL" --trust-model $GPG_TRUST_MODEL --output $ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME $BACKUPS_DIR/$DUMP_FILENAME; then
+            echo -e "Backup encrypted for $EMAIL as $ENCRYPTED_DUMP_FILENAME\n"
+            upload_to_owncloud "$ENCRYPTED_BACKUPS_DIR/$ENCRYPTED_DUMP_FILENAME"
+        else
+            echo "GPG failed for $EMAIL"
+            GPG_ERRORS=$((GPG_ERRORS+1))
+        fi
     done
+    if [ $GPG_ERRORS -gt 0 ]; then
+        run_hooks "error"
+        exit 1
+    fi
     elif [ -n "${PASSPHRASE:-}" ]; then
     ENCRYPTED_DUMP_FILENAME=${POSTGRES_DB}_${TIMESTAMP}.dump.gpg
     echo "Encrypting backup using passphrase..."
