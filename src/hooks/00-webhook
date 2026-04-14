@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Possible actions: error, pre-backup, post-backup
 ACTION="$1"

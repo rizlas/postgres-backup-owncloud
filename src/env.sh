@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export PGUSER="${POSTGRES_USER}"
 export PGPASSWORD="${POSTGRES_PASSWORD}"

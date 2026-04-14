@@ -12,7 +12,7 @@ ARG GROUP=pbo
 
 RUN <<EOF
 apk update
-apk add --no-cache tzdata postgresql-client python3 gnupg curl
+apk add --no-cache tzdata postgresql-client python3 gnupg curl bash
 curl --fail --retry 4 --retry-all-errors -L $GO_CRON_URL | gzip -d > /usr/local/bin/go-cron
 addgroup -g $GID $GROUP && adduser -D -u $UID -G $GROUP $USER
 chown $USER:$GROUP /usr/local/bin/go-cron
@@ -38,4 +38,4 @@ USER $USER
 COPY --chown=$USER:$GROUP src/ .
 RUN chmod +x /app/*.sh
 
-CMD ["sh", "entrypoint.sh"]
+CMD ["bash", "entrypoint.sh"]

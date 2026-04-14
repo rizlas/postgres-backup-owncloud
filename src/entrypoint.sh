@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 mandatory_env_vars="
 POSTGRES_HOST
@@ -20,4 +20,4 @@ for var in $mandatory_env_vars; do
     fi
 done
 
-exec /usr/local/bin/go-cron -s "$SCHEDULE" -p "$HEALTHCHECK_PORT" -- /bin/sh /app/backup.sh
+exec /usr/local/bin/go-cron -s "$SCHEDULE" -p "$HEALTHCHECK_PORT" -- /bin/bash /app/backup.sh
