@@ -11,6 +11,7 @@ ARG USER=pbo
 ARG GROUP=pbo
 
 RUN <<EOF
+set -euo pipefail
 apk update
 apk add --no-cache tzdata postgresql-client python3 gnupg curl bash
 curl --fail --retry 4 --retry-all-errors -L $GO_CRON_URL | gzip -d > /usr/local/bin/go-cron

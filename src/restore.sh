@@ -18,8 +18,8 @@ if [ "$RESTORE_MODE" = "remote" ]; then
     SOURCE="--xml-file $XML_TEMP_FILE"
     
     # List files
-    curl -s -X PROPFIND -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-    https://$OWNCLOUD_FQDN/public.php/webdav -o $XML_TEMP_FILE
+    curl -s -X PROPFIND -u "$WEBDAV_SHARE_ID:$WEBDAV_SHARE_PASSWORD" \
+    "$(get_webdav_url)" -o $XML_TEMP_FILE
     elif [ "$RESTORE_MODE" = "local" ]; then
     SOURCE="--share-path $SHARE_PATH"
 fi
@@ -43,8 +43,8 @@ if [ "$RESTORE_MODE" = "remote" ]; then
     fi
     
     echo "Downloading $LATEST_BACKUP"
-    curl -s -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-    https://$OWNCLOUD_FQDN/public.php/webdav/$LATEST_BACKUP -o /tmp/$LATEST_BACKUP
+    curl -s -u "$WEBDAV_SHARE_ID:$WEBDAV_SHARE_PASSWORD" \
+    "$(get_webdav_url "$LATEST_BACKUP")" -o /tmp/$LATEST_BACKUP
     
     if [ $? -ne 0 ]; then
         echo "Error: Failed to download $LATEST_BACKUP."
