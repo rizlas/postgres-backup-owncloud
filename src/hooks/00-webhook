@@ -21,7 +21,6 @@ send_webhook() {
 case "$ACTION" in
     "error")
         STATUS="error"
-        send_webhook "$WEBHOOK_URL"
         send_webhook "$WEBHOOK_ERROR_URL"
     ;;
     

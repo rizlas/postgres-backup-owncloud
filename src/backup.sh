@@ -9,6 +9,7 @@ cleanup() {
 
 on_error() {
     run_hooks "error"
+    exit 1
 }
 
 upload_to_owncloud() {
@@ -20,9 +21,9 @@ upload_to_owncloud() {
             echo "Uploading: $1"
             filename=$(basename "$1")
             
-            curl -k -T $1 -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
+            curl -k -T $1 -u "$WEBDAV_SHARE_ID:$WEBDAV_SHARE_PASSWORD" \
             -H 'X-Requested-With: XMLHttpRequest' \
-            https://$OWNCLOUD_FQDN/public.php/webdav/$filename
+            "$(get_webdav_url "$filename")"
             echo -e "$filename uploaded to https://$OWNCLOUD_FQDN\n"
         fi
     else
@@ -99,8 +100,8 @@ echo "Removing old backups older than $BACKUP_KEEP_DAYS days from ownCloud share
 XML_TEMP_FILE=$(mktemp)
 
 # List files
-curl -s -X PROPFIND -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-https://$OWNCLOUD_FQDN/public.php/webdav -o $XML_TEMP_FILE
+curl -s -X PROPFIND -u "$WEBDAV_SHARE_ID:$WEBDAV_SHARE_PASSWORD" \
+"$(get_webdav_url)" -o $XML_TEMP_FILE
 
 OUTPUT=$(python3 "get_backups.py" filterdate --xml-file "$XML_TEMP_FILE" --days "$BACKUP_KEEP_DAYS")
 
@@ -112,8 +113,8 @@ if [ -n "${OUTPUT:-}" ]; then
             echo "DRY RUN: Skipping deletion for $file"
         else
             # Delete file
-            curl -s -X DELETE -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-            "https://$OWNCLOUD_FQDN/public.php/webdav/$file"
+            curl -s -X DELETE -u "$WEBDAV_SHARE_ID:$WEBDAV_SHARE_PASSWORD" \
+            "$(get_webdav_url "$file")"
             echo "$file deleted."
         fi
     done

@@ -1,7 +1,8 @@
 # postgres-backup-owncloud
 
 Postgres-backup-owncloud provides a simple solution for automating PostgreSQL database
-backups, encrypting them via GPG, and securely uploading them to an OwnCloud server.
+backups, encrypting them via GPG, and securely uploading them to a Nextcloud or OwnCloud
+server via WebDAV public shares.
 This is based on multiple solutions already available on github, main two are:
 
 - [docker-postgres-backup-local](https://github.com/prodrigestivill/docker-postgres-backup-local)
@@ -14,35 +15,43 @@ Backups are cron based using [go-cron](https://github.com/prodrigestivill/go-cro
 
 ## Environment variables
 
-|             Name             |                                                                                                                                    Description                                                                                                                                    | Default |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| BACKUP_KEEP_DAYS             | Number of daily backups to keep before removal.                                                                                                                                                                                                                                   | 7       |
-| SCHEDULE                     | [Cron-schedule](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules) specifying the interval between postgres backups.                                                                                                                                               | @daily  |
-| HEALTHCHECK_PORT             | Port listening for cron-schedule health check.                                                                                                                                                                                                                                    | 8080    |
-| DRY_RUN                      | Test container functionality. It will not upload or restore dumps if set to true.                                                                                                                                                                                                 | false   |
-| RESTORE_MODE                 | Specifies where the backup should be restored from during the restore process. It defaults to 'remote', which means the backup will be fetched from OwnCloud. If set to 'local', the backup will be restored from a local directory specified in SHARE_PATH environment variable. | remote  |
-| SHARE_PATH                   | Path to a shared ownCloud folder containing backups. Mandatory when using restore mode 'local'.                                                                                                                                                                                   | ""      |
-| PGDUMP_EXTRA_OPTS            | Additional options for pg_dump.                                                                                                                                                                                                                                                   | ""      |
-| POSTGRES_HOST                | Postgres connection parameter; postgres host to connect to. **Required**.                                                                                                                                                                                                         |         |
-| POSTGRES_PORT                | Postgres connection parameter; postgres port to connect to. **Required**.                                                                                                                                                                                                         |         |
-| POSTGRES_DB                  | Postgres connection parameter; postgres database name to connect to. **Required**.                                                                                                                                                                                                |         |
-| POSTGRES_PASSWORD            | Postgres connection parameter; postgres password to connect with. **Required**.                                                                                                                                                                                                   |         |
-| POSTGRES_USER                | Postgres connection parameter; postgres user to connect with. **Required**.                                                                                                                                                                                                       |         |
-| OWNCLOUD_FQDN                | ownCloud FQDN without protocol (Fixed protocol is https, no http). **Required**.                                                                                                                                                                                                  |         |
-| OWNCLOUD_SHARE_ID            | ownCloud public share ID. **Required**.                                                                                                                                                                                                                                           |         |
-| OWNCLOUD_SHARE_PASSWORD      | ownCloud share password. **Required**.                                                                                                                                                                                                                                            |         |
-| PASSPHRASE                   | Passphrase used to encrypt or decrypt dumps.                                                                                                                                                                                                                                      |         |
-| GPG_EMAILS                   | Comma separated list of emails that will be used to encrypt dumps. This will take precedence over PASSPHRASE.                                                                                                                                                                     | ""      |
-| GPG_TRUST_MODEL              | Set what trust model GnuPG should follow. Check gpg manual for available options.                                                                                                                                                                                                 | auto    |
-| GPG_KEY_LOCATE               | Set retrieval mechanism when encrypting with an email address. Check gpg manual for available options.                                                                                                                                                                            | wkd     |
-| GPG_RESTORE_EMAIL            | Email used to decrypt dumps.                                                                                                                                                                                                                                                      |         |
-| GPG_RESTORE_EMAIL_PASSPHRASE | Passphrase of the private GPG key. Use this if you want to avoid user interaction.                                                                                                                                                                                                |         |
-| WEBHOOK_URL                  | URL to be called after an error or after a successful backup (POST with a JSON payload, check hooks/00-webhook file for more info).                                                                                                                                               | ""      |
-| WEBHOOK_ERROR_URL            | URL to be called in case backup fails.                                                                                                                                                                                                                                            | ""      |
-| WEBHOOK_PRE_BACKUP_URL       | URL to be called when backup starts.                                                                                                                                                                                                                                              | ""      |
-| WEBHOOK_POST_BACKUP_URL      | URL to be called when backup completes successfully.                                                                                                                                                                                                                              | ""      |
-| WEBHOOK_EXTRA_ARGS           | Extra arguments for the curl execution in the webhook (check hooks/00-webhook file for more info).                                                                                                                                                                                | ""      |
-| TZ                           | Container timezone.                                                                                                                                                                                                                                                               | UTC     |
+|             Name             |                                                                                                                                        Description                                                                                                                                         | Default  |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| BACKUP_KEEP_DAYS             | Number of daily backups to keep before removal.                                                                                                                                                                                                                                            | 7        |
+| SCHEDULE                     | [Cron-schedule](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules) specifying the interval between postgres backups.                                                                                                                                                        | @daily   |
+| HEALTHCHECK_PORT             | Port listening for cron-schedule health check.                                                                                                                                                                                                                                             | 8080     |
+| DRY_RUN                      | Test container functionality. It will not upload or restore dumps if set to true.                                                                                                                                                                                                          | false    |
+| RESTORE_MODE                 | Specifies where the backup should be restored from during the restore process. It defaults to 'remote', which means the backup will be fetched from the cloud storage. If set to 'local', the backup will be restored from a local directory specified in SHARE_PATH environment variable. | remote   |
+| SHARE_PATH                   | Path to a local folder containing backups. Mandatory when using restore mode 'local'.                                                                                                                                                                                                      | ""       |
+| PGDUMP_EXTRA_OPTS            | Additional options for pg_dump.                                                                                                                                                                                                                                                            | ""       |
+| POSTGRES_HOST                | Postgres connection parameter; postgres host to connect to. **Required**.                                                                                                                                                                                                                  |          |
+| POSTGRES_PORT                | Postgres connection parameter; postgres port to connect to. **Required**.                                                                                                                                                                                                                  |          |
+| POSTGRES_DB                  | Postgres connection parameter; postgres database name to connect to. **Required**.                                                                                                                                                                                                         |          |
+| POSTGRES_PASSWORD            | Postgres connection parameter; postgres password to connect with. **Required**.                                                                                                                                                                                                            |          |
+| POSTGRES_USER                | Postgres connection parameter; postgres user to connect with. **Required**.                                                                                                                                                                                                                |          |
+| CLOUD_TYPE                   | Cloud storage provider: `nextcloud` or `owncloud`. Determines the WebDAV path format used for all operations.                                                                                                                                                                              | owncloud |
+| WEBDAV_FQDN                  | Server hostname without protocol (HTTPS is always used). **Required**. Replaces `OWNCLOUD_FQDN`.                                                                                                                                                                                           |          |
+| WEBDAV_SHARE_ID              | Public share token. **Required**. Replaces `OWNCLOUD_SHARE_ID`.                                                                                                                                                                                                                            |          |
+| WEBDAV_SHARE_PASSWORD        | Public share password. **Required**. Replaces `OWNCLOUD_SHARE_PASSWORD`.                                                                                                                                                                                                                   |          |
+| PASSPHRASE                   | Passphrase used to encrypt or decrypt dumps.                                                                                                                                                                                                                                               |          |
+| GPG_EMAILS                   | Comma separated list of emails that will be used to encrypt dumps. This will take precedence over PASSPHRASE.                                                                                                                                                                              | ""       |
+| GPG_TRUST_MODEL              | Set what trust model GnuPG should follow. Check gpg manual for available options.                                                                                                                                                                                                          | auto     |
+| GPG_KEY_LOCATE               | Set retrieval mechanism when encrypting with an email address. Check gpg manual for available options.                                                                                                                                                                                     | wkd      |
+| GPG_RESTORE_EMAIL            | Email used to decrypt dumps.                                                                                                                                                                                                                                                               |          |
+| GPG_RESTORE_EMAIL_PASSPHRASE | Passphrase of the private GPG key. Use this if you want to avoid user interaction.                                                                                                                                                                                                         |          |
+| WEBHOOK_URL                  | URL to be called after a **successful** backup only (POST with a JSON payload, check hooks/00-webhook file for more info). For healthcheck services, set this to the success/ping endpoint.                                                                                                | ""       |
+| WEBHOOK_ERROR_URL            | URL to be called when the backup fails. For healthcheck services, set this to the failure endpoint (e.g. `/ping/{uuid}/fail`).                                                                                                                                                             | ""       |
+| WEBHOOK_PRE_BACKUP_URL       | URL to be called when backup starts.                                                                                                                                                                                                                                                       | ""       |
+| WEBHOOK_POST_BACKUP_URL      | URL to be called when backup completes successfully.                                                                                                                                                                                                                                       | ""       |
+| WEBHOOK_EXTRA_ARGS           | Extra arguments for the curl execution in the webhook (check hooks/00-webhook file for more info).                                                                                                                                                                                         | ""       |
+| TZ                           | Container timezone.                                                                                                                                                                                                                                                                        | UTC      |
+
+### Backward compatibility
+
+The legacy `OWNCLOUD_FQDN`, `OWNCLOUD_SHARE_ID`, and `OWNCLOUD_SHARE_PASSWORD` variable
+names are still accepted. If the `WEBDAV_*` equivalents are not set, the container falls
+back to the `OWNCLOUD_*` values automatically. Existing deployments do not need to
+change their configuration.
 
 ## GPG Encryption
 
@@ -83,12 +92,19 @@ docker compose up -d
 
 ### Development of get_backups.py
 
-1. Get an xml file with curl
+1. Get an xml file with curl (Nextcloud example):
 
     ```bash
     cd src
-    curl -s -X PROPFIND -u "$OWNCLOUD_SHARE_ID:$OWNCLOUD_SHARE_PASSWORD" \
-        https://$OWNCLOUD_FQDN/public.php/webdav -o test.xml
+    curl -s -X PROPFIND -u "$WEBDAV_SHARE_ID:$WEBDAV_SHARE_PASSWORD" \
+        "https://$WEBDAV_FQDN/public.php/dav/files/$WEBDAV_SHARE_ID/" -o test.xml
+    ```
+
+    For OwnCloud:
+
+    ```bash
+    curl -s -X PROPFIND -u "$WEBDAV_SHARE_ID:$WEBDAV_SHARE_PASSWORD" \
+        "https://$WEBDAV_FQDN/public.php/webdav/" -o test.xml
     ```
 
 2. Make adjustment and run the script. For example
@@ -136,7 +152,8 @@ sh restore.sh
 
 1. Restore mode 'remote'
 
-    - Lastest backup will be downloaded from ownCloud and restored
+    - Latest backup will be downloaded from the configured cloud storage (Nextcloud or
+      OwnCloud) and restored
 
 2. Restore mode 'local'. You must also set SHARE_PATH env var.
 
@@ -146,7 +163,8 @@ sh restore.sh
 
 ---
 
-Feel free to make pull requests, fork, destroy or whatever you like most. Any criticism is more than welcome.
+Feel free to make pull requests, fork, destroy or whatever you like most. Any criticism
+is more than welcome.
 
 <br/>
 
